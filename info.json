@@ -1,0 +1,10 @@
+
+{
+    "name": "ocs",
+    "version": "0.1.0",
+    "title": "Overclocking Stations (OCS)",
+    "author": "Katharsas",
+    "factorio_version": "1.1",
+    "dependencies": ["base >= 1.1"],
+    "description": "Replace beacons with overclocking stations."
+}
