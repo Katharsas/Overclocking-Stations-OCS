@@ -96,10 +96,10 @@ data:extend(
     energy_required = 30,
     ingredients =
     {
-      {"beacon", 1},
+
       {"electronic-circuit", 20},
       {"advanced-circuit", 20},
-      {"processing-unit", 20},
+      -- {"processing-unit", 20},
       {"steel-plate", 10},
       {"copper-cable", 10},
     },
@@ -108,7 +108,7 @@ data:extend(
 
  {
     type = "technology",
-    name = "effect-transmission-2",
+    name = "effect-transfer",
     icon = "__base__/graphics/technology/effect-transmission.png",
     icon_size = 256,
     icon_mipmaps = 4,
@@ -121,7 +121,6 @@ data:extend(
     },
     prerequisites =
     {
-      "effect-transmission",
       "advanced-electronics-2",
       "production-science-pack"
     },
