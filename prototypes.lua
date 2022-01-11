@@ -1,8 +1,10 @@
 print("OCS")
-print(serpent.block(data.raw.item["beacon"]))
+-- print(serpent.block(data.raw.item["beacon"]))
+-- print(serpent.block(data.raw.beacon["beacon"]))
 
 data:extend(
 {
+  -- OCS receipe (and inventory?) item
   {
     type = "item",
     name = "ocs",
@@ -15,6 +17,7 @@ data:extend(
     stack_size = 10
   },
 
+  -- OCS building
   util.merge{
     data.raw.beacon.beacon,
     {
@@ -22,12 +25,93 @@ data:extend(
       minable = {result = "ocs"},
       max_health = 300,
       supply_area_distance = 1,
-      distribution_effectivity = 0.75,
-      module_specification = { module_slots = 4},
+      distribution_effectivity = 0.5,
+      module_specification = { module_slots = 2 },
     }
   },
 
-  -- {
+  -- Invisivle helper beacon that is spawned for every crafting machine connected to a OCS building
+  -- util.merge
+  {
+    -- data.raw.beacon.beacon,
+    -- {
+      type = "beacon",
+      name = "ocs-helper",
+      -- minable = nil, -- todo does this set minable to default?
+      -- selection_box =  {{0, 0}, {0, 0}} -- default (unselectable)
+      flags = { "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
+      energy_usage = "1W", -- apparently setting it to 0 is not allowed for beacons
+      energy_source =
+      {
+        type = "void"
+      },
+      supply_area_distance = 1,
+      distribution_effectivity = 0.5,
+      module_specification = { module_slots = 2 },
+      allowed_effects = {"consumption", "speed", "pollution"},
+      base_picture =
+      {
+        filename = "__base__/graphics/entity/beacon/beacon-bottom.png",
+        width = 106,
+        height = 96,
+        shift = { 0.34, 0.06}
+      },
+    -- }
+  },
+
+  -- OCS Crafting recipe
+  {
+    type = "recipe",
+    name = "ocs",
+    enabled = false,
+    energy_required = 30,
+    ingredients =
+    {
+
+      {"electronic-circuit", 20},
+      {"advanced-circuit", 20},
+      -- {"processing-unit", 20},
+      {"steel-plate", 10},
+      {"copper-cable", 10},
+    },
+    result = "ocs"
+  },
+
+ -- OCS Technology
+ {
+    type = "technology",
+    name = "effect-transfer",
+    icon = "__base__/graphics/technology/effect-transmission.png",
+    icon_size = 256,
+    icon_mipmaps = 4,
+    effects =
+    {
+      {
+        type = "unlock-recipe",
+        recipe = "ocs"
+      }
+    },
+    prerequisites =
+    {
+      "advanced-electronics-2",
+      "production-science-pack"
+    },
+    unit =
+    {
+      count = 100,
+      ingredients =
+      {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+      },
+      time = 30
+    },
+    order = "i-i-2"
+  },
+
+    -- {
   --   type = "beacon",
   --   name = "ocs",
   --   icon = "__base__/graphics/icons/beacon.png",
@@ -88,56 +172,6 @@ data:extend(
   --     module_info_multi_row_initial_height_modifier = -0.3
   --   }
   -- },
-
-  {
-    type = "recipe",
-    name = "ocs",
-    enabled = false,
-    energy_required = 30,
-    ingredients =
-    {
-
-      {"electronic-circuit", 20},
-      {"advanced-circuit", 20},
-      -- {"processing-unit", 20},
-      {"steel-plate", 10},
-      {"copper-cable", 10},
-    },
-    result = "ocs"
-  },
-
- {
-    type = "technology",
-    name = "effect-transfer",
-    icon = "__base__/graphics/technology/effect-transmission.png",
-    icon_size = 256,
-    icon_mipmaps = 4,
-    effects =
-    {
-      {
-        type = "unlock-recipe",
-        recipe = "ocs"
-      }
-    },
-    prerequisites =
-    {
-      "advanced-electronics-2",
-      "production-science-pack"
-    },
-    unit =
-    {
-      count = 100,
-      ingredients =
-      {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"production-science-pack", 1},
-      },
-      time = 30
-    },
-    order = "i-i-2"
-  },
 
 }
 )
