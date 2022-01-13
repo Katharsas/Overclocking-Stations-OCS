@@ -2,6 +2,8 @@ print("OCS")
 -- print(serpent.block(data.raw.item["beacon"]))
 -- print(serpent.block(data.raw.beacon["beacon"]))
 
+ocs_effectivity = 0.5
+
 data:extend(
 {
   -- OCS receipe (and inventory?) item
@@ -25,7 +27,7 @@ data:extend(
       minable = {result = "ocs"},
       max_health = 300,
       supply_area_distance = 1,
-      distribution_effectivity = 0.5,
+      distribution_effectivity = ocs_effectivity,
       module_specification = { module_slots = 2 },
     }
   },
@@ -46,15 +48,15 @@ data:extend(
         type = "void"
       },
       supply_area_distance = 1,
-      distribution_effectivity = 0.5,
-      module_specification = { module_slots = 2 },
+      distribution_effectivity = ocs_effectivity,
+      module_specification = { module_slots = 12 },
       allowed_effects = {"consumption", "speed", "pollution"},
       base_picture =
       {
         filename = "__base__/graphics/entity/beacon/beacon-bottom.png",
-        width = 106,
-        height = 96,
-        shift = { 0.34, 0.06}
+        width = 40,
+        height = 40,
+        shift = { 0, 0 }
       },
     -- }
   },
