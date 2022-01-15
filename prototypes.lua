@@ -1,6 +1,7 @@
 print("OCS")
 -- print(serpent.block(data.raw.item["beacon"]))
--- print(serpent.block(data.raw.beacon["beacon"]))
+-- print(serpent.block(data.raw["beacon"]["beacon"]))
+-- print(serpent.block(data.raw["constant-combinator"]["constant-combinator"]))
 
 ocs_effectivity = 0.5
 
@@ -10,9 +11,8 @@ data:extend(
   {
     type = "item",
     name = "ocs",
-    icon = "__base__/graphics/icons/beacon.png",
-    icon_size = 64,
-    icon_mipmaps = 4,
+    icon = "__base__/graphics/icons/constant-combinator.png",
+    icon_size = 64, icon_mipmaps = 4,
     subgroup = "module",
     order = "a[beacon]-2",
     place_result = "ocs",
@@ -20,16 +20,49 @@ data:extend(
   },
 
   -- OCS building
-  util.merge{
-    data.raw.beacon.beacon,
+  -- util.merge{
+  --   data.raw.beacon.beacon,
     {
       name = "ocs",
+      type = "beacon",
       minable = {result = "ocs"},
       max_health = 300,
+      minable = {
+        mining_time = 0.2,
+        result = "ocs"
+      },
+      energy_source =
+      {
+        type = "electric",
+        usage_priority = "secondary-input"
+      },
+      energy_usage = "480kW",
       supply_area_distance = 1,
       distribution_effectivity = ocs_effectivity,
       module_specification = { module_slots = 2 },
-    }
+      allowed_effects = {"consumption", "speed", "pollution"},
+      collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
+      selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+
+      icon = "__base__/graphics/icons/constant-combinator.png",
+      icon_size = 64, icon_mipmaps = 4,
+      base_picture =
+      {
+        filename = "__ocs__/constant-combinator.png",
+        width = 58,
+        height = 52,
+        shift = { 0, 0 }
+      },
+      hr_version = {
+        filename = "__ocs__/hr-constant-combinator.png",
+        width = 114,
+        height = 102,
+        scale = 0.5,
+        shift = { 0, 0 },
+      },
+      corpse = "decider-combinator-remnants",
+      dying_explosion = "decider-combinator-explosion",
+    -- }
   },
 
   -- Invisivle helper beacon that is spawned for every crafting machine connected to a OCS building
@@ -39,6 +72,8 @@ data:extend(
     -- {
       type = "beacon",
       name = "ocs-helper",
+      icon = "__base__/graphics/icons/constant-combinator.png",
+      icon_size = 64, icon_mipmaps = 4,
       -- minable = nil, -- todo does this set minable to default?
       -- selection_box =  {{0, 0}, {0, 0}} -- default (unselectable)
       flags = { "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
@@ -53,10 +88,17 @@ data:extend(
       allowed_effects = {"consumption", "speed", "pollution"},
       base_picture =
       {
-        filename = "__base__/graphics/entity/beacon/beacon-bottom.png",
-        width = 40,
-        height = 40,
+        filename = "__base__/graphics/entity/combinator/constant-combinator.png",
+        width = 58,
+        height = 52,
         shift = { 0, 0 }
+      },
+      hr_version = {
+        filename = "__base__/graphics/entity/combinator/hr-constant-combinator.png",
+        width = 114,
+        height = 102,
+        scale = 0.5,
+        shift = { 0, 0 },
       },
     -- }
   },

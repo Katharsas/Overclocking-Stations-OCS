@@ -33,35 +33,32 @@ local function sub(pos1, pos2)
 end
 
 
-
 local function find_adjacent_ocs(entity)
     local ocs_potential_area = {x=OCS_WIDE_SIDE, y=OCS_WIDE_SIDE}
-    local top_left = sub(entity.selection_box.left_top, ocs_potential_area)
-    local bot_right = add(entity.selection_box.right_bottom, ocs_potential_area)
-    
-    -- print("Pos: " .. serpent.line(entity.position))
-    -- print("selection_box: " .. serpent.line(entity.selection_box))
-    -- print("top_left: " .. serpent.line(top_left))
-    -- print("bot_right: " .. serpent.line(bot_right))
-    -- surface.create_entity{
-    --     name = "constant-combinator",
-    --     position = top_left,
-    --     force = force_neutral
-    -- }
-    -- surface.create_entity{
-    --     name = "constant-combinator",
-    --     position = sub(bot_right, {x=1,y=1}),
-    --     force = force_neutral
-    -- }
+    local entity_area = entity.selection_box
+    local top_left = sub(entity_area.left_top, ocs_potential_area)
+    local bot_right = add(entity_area.right_bottom, ocs_potential_area)
 
-    print("Adjacent candidates:")
-    -- TODO filter to find only ocs
-    local adjacent_entity_candidates = surface.find_entities({top_left, bot_right})
-    for i, entity in ipairs(adjacent_entity_candidates) do
-        print(entity.name)
+    local adjacent_ocs_candidates = surface.find_entities_filtered({
+        area={top_left, bot_right},
+        name="ocs"
+    })
+    local adjacent_ocs = {}
+    for i, ocs in ipairs(adjacent_ocs_candidates) do
+        local x = ocs.position.x
+        local y = ocs.position.y
+        local isAdjacentHori = entity_area.left_top.x < x and x < entity_area.right_bottom.x
+        local isAdjacentVert = entity_area.left_top.y < y and y < entity_area.right_bottom.y
+        if isAdjacentHori or isAdjacentVert then
+            table.insert(adjacent_ocs, ocs)
+        end
     end
-
+    -- for i, ocs in ipairs(adjacent_ocs) do
+    --     print("Adjacent ocs at " .. serpent.line(ocs.position))
+    -- end
+    return adjacent_ocs
 end
+
 
 local function on_crafting_machine_built(entity)
 
@@ -77,8 +74,7 @@ local function on_crafting_machine_built(entity)
         force = force_neutral
     }
 
-    -- TODO find out if there is an OCS station adjacent to this
-    find_adjacent_ocs(entity)
+    local adjacent_ocs = find_adjacent_ocs(entity)
 
     -- local helper_module = {name="speed-module-3", count=1}
     -- helper.get_module_inventory().insert(helper_module);
