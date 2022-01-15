@@ -53,37 +53,50 @@ local function find_adjacent_ocs(entity)
             table.insert(adjacent_ocs, ocs)
         end
     end
-    -- for i, ocs in ipairs(adjacent_ocs) do
-    --     print("Adjacent ocs at " .. serpent.line(ocs.position))
-    -- end
     return adjacent_ocs
 end
 
 
 local function on_crafting_machine_built(entity)
 
-    local unit_number = entity.unit_number
-    local pos = entity.position
-
-    -- test spawning helper beacon
-    local helper_pos = {pos.x + 0, pos.y + 0}
-    print("OCS: Helper position: " .. serpent.line(helper_pos))
-    local helper = surface.create_entity{
-        name = "ocs-helper",
-        position = helper_pos,
-        force = force_neutral
-    }
-
+    -- find adjacent ocs
     local adjacent_ocs = find_adjacent_ocs(entity)
 
-    -- local helper_module = {name="speed-module-3", count=1}
-    -- helper.get_module_inventory().insert(helper_module);
+    if #adjacent_ocs > 0 then
+        
+        -- local unit_number = entity.unit_number
+        local pos = entity.position
+    
+        -- spawn helper beacon
+        local helper_pos = {pos.x + 0, pos.y + 0}
+        -- print("OCS: Helper position: " .. serpent.line(helper_pos))
+        local helper = surface.create_entity{
+            name = "ocs-helper",
+            position = helper_pos,
+            force = force_neutral
+        }
+        global.machines[entity.unit_number] = helper
 
-    -- print("OCS: Crafting machine was built")
-    -- print(unit_number)
+        -- copy modules from all ocs into helper
+        -- TODO make sure those modules to not count in player production statistics and cannot be removed by bots
+        local helper_inventory = helper.get_module_inventory()
+        for j, ocs in ipairs(adjacent_ocs) do
+            local ocs_inventory = ocs.get_module_inventory()
+            for k = 1, ocs_inventory.get_item_count(), 1 do
+                local module = ocs_inventory[k]
+                helper_inventory.insert(module)
+            end
+        end
+    end
 end
 
+
 local function on_crafting_machine_removed(entity)
+
+    local helper = global.machines[entity.unit_number]
+    if helper then
+        helper.destroy()
+    end
 end
 
 
@@ -150,12 +163,7 @@ script.on_event(defines.events.on_built_entity,
 
 script.on_event(defines.events.on_player_mined_entity,
   function(event)
-    local created_entity = event.entity
-    local created_entity_number = created_entity.unit_number
-    local player = game.get_player(event.player_index)
-
-    print("OCS: Crafting machine was destroyed!")
-    print(created_entity_number)
+    on_crafting_machine_removed(event.entity)
   end,
   filter
 )
