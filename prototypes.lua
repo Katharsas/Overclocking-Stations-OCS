@@ -31,15 +31,25 @@ data:extend(
         mining_time = 0.2,
         result = "ocs"
       },
+      -- Right now, power is irrelevant for this building, beacuse ocs_helper is doing all the module effects anyway.
+      -- The only effect that making it draw power has is, that player gets tooltip about power usage that could be used
+      -- to explain and calculate power draw of the helper building
       energy_source =
       {
         type = "electric",
-        usage_priority = "secondary-input"
+        usage_priority = "secondary-input",
+        render_no_power_icon = false,
+        render_no_network_icon = false
       },
       energy_usage = "480kW",
       supply_area_distance = 1,
       distribution_effectivity = ocs_effectivity,
-      module_specification = { module_slots = 2 },
+      module_specification = {
+        module_info_icon_shift = {0, 0},
+        module_info_max_icons_per_row = 2,
+        module_info_multi_row_initial_height_modifier = 0,
+        module_slots = 2
+      },
       allowed_effects = {"consumption", "speed", "pollution"},
       collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
       selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
@@ -77,6 +87,7 @@ data:extend(
       -- minable = nil, -- todo does this set minable to default?
       -- selection_box =  {{0, 0}, {0, 0}} -- default (unselectable)
       flags = { "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
+      -- selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
       energy_usage = "1W", -- apparently setting it to 0 is not allowed for beacons
       energy_source =
       {
