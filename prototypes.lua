@@ -3,7 +3,13 @@ print("OCS")
 -- print(serpent.block(data.raw["beacon"]["beacon"]))
 -- print(serpent.block(data.raw["constant-combinator"]["constant-combinator"]))
 
-ocs_effectivity = 0.5
+ocs_effectivity = 0.333 -- module effect multiplier for modules from OCS
+ocs_module_slots = 1 -- module slots per OCS
+ocs_module_cap = 12 -- max number of modules that can affect a single machine
+ocs_tech_sp_cost = 500 -- number of science packs required to research OCS
+
+-- TODO Balance Options:
+-- Opt-In to additional power consumer helper entity for power balancing (240kw per active module)
 
 data:extend(
 {
@@ -11,7 +17,7 @@ data:extend(
   {
     type = "item",
     name = "ocs",
-    icon = "__base__/graphics/icons/constant-combinator.png",
+    icon = "__ocs__/graphics/icon-constant-combinator.png",
     icon_size = 64, icon_mipmaps = 4,
     subgroup = "module",
     order = "a[beacon]-2",
@@ -20,98 +26,108 @@ data:extend(
   },
 
   -- OCS building
-  -- util.merge{
-  --   data.raw.beacon.beacon,
+  {
+    name = "ocs",
+    type = "beacon",
+    minable = {result = "ocs"},
+    max_health = 300,
+    minable = {
+      mining_time = 0.2,
+      result = "ocs"
+    },
+    -- Right now, power is irrelevant for this building, beacuse ocs_helper is doing all the module effects anyway.
+    -- The only effect that making it draw power would have is that player gets tooltip about power usage that could
+    -- be used to explain and calculate power draw of the helper building.
+    -- If synchronize could be triggered on power loss / regain, this building could use power for balancing without
+    -- players being able to exploit by not suppolying power to these buildings.
+    energy_source =
     {
-      name = "ocs",
-      type = "beacon",
-      minable = {result = "ocs"},
-      max_health = 300,
-      minable = {
-        mining_time = 0.2,
-        result = "ocs"
-      },
-      -- Right now, power is irrelevant for this building, beacuse ocs_helper is doing all the module effects anyway.
-      -- The only effect that making it draw power has is, that player gets tooltip about power usage that could be used
-      -- to explain and calculate power draw of the helper building
-      energy_source =
-      {
-        type = "electric",
-        usage_priority = "secondary-input",
-        render_no_power_icon = false,
-        render_no_network_icon = false
-      },
-      energy_usage = "480kW",
-      supply_area_distance = 1,
-      distribution_effectivity = ocs_effectivity,
-      module_specification = {
-        module_info_icon_shift = {0, 0},
-        module_info_max_icons_per_row = 2,
-        module_info_multi_row_initial_height_modifier = 0,
-        module_slots = 2
-      },
-      allowed_effects = {"consumption", "speed", "pollution"},
-      collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
-      selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+      type = "void"
+    },
+    energy_usage = "1W",
+    supply_area_distance = 0,
+    distribution_effectivity = ocs_effectivity,
+    module_specification = {
+      module_info_icon_shift = {0, 0},
+      module_info_max_icons_per_row = 2,
+      module_info_multi_row_initial_height_modifier = 0,
+      module_slots = ocs_module_slots
+    },
+    allowed_effects = {"consumption", "speed", "pollution"},
+    collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
+    selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
 
-      icon = "__base__/graphics/icons/constant-combinator.png",
-      icon_size = 64, icon_mipmaps = 4,
-      base_picture =
-      {
-        filename = "__ocs__/constant-combinator.png",
-        width = 58,
-        height = 52,
-        shift = { 0, 0 }
-      },
-      hr_version = {
-        filename = "__ocs__/hr-constant-combinator.png",
-        width = 114,
-        height = 102,
-        scale = 0.5,
-        shift = { 0, 0 },
-      },
-      corpse = "decider-combinator-remnants",
-      dying_explosion = "decider-combinator-explosion",
-    -- }
+    icon = "__ocs__/graphics/icon-constant-combinator.png",
+    icon_size = 64, icon_mipmaps = 4,
+    base_picture =
+    {
+      filename = "__ocs__/graphics/constant-combinator.png",
+      width = 58,
+      height = 52,
+      shift = { 0, 0 }
+    },
+    hr_version = {
+      filename = "__ocs__/graphics/hr-constant-combinator.png",
+      width = 114,
+      height = 102,
+      scale = 0.5,
+      shift = { 0, 0 },
+    },
+    corpse = "decider-combinator-remnants",
+    dying_explosion = "decider-combinator-explosion",
   },
 
-  -- Invisivle helper beacon that is spawned for every crafting machine connected to a OCS building
-  -- util.merge
+  -- Invisible helper beacon that is spawned for every crafting machine connected to a OCS building
   {
-    -- data.raw.beacon.beacon,
+    type = "beacon",
+    name = "ocs-helper",
+    icon = "__ocs__/graphics/icon-constant-combinator.png",
+    icon_size = 64, icon_mipmaps = 4,
+    flags = { "placeable-off-grid", "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
+    selection_box = {{-1.5, -1.5}, {1.5, 1.5}}, -- TODO generate versions for all crafting machine sizes, maybe make slightly smaller to never be selectable
+    selection_priority = 0, -- unselectable if placed under machine
+    -- Just make sure that module effect is throttled when energy drops below 100%, not meant for balance.
+    -- TODO
+    -- This does not make any sense. If the machine does not have power, beacon will have no effect anyway.
+    -- Just remove any power requirements from OCS or OCS helper and leave all of that mess behind. Or use another
+    -- helper object based on ElectricEnergyInterface
+    -- Note:
+    -- Beacons have rediculous energy buffers (8.4 times usage?). Since machines always request enough energy to
+    -- fill their buffer fully, this means that beacons will receive an extremely disproportionate amount of left-over
+    -- energy when satisfaction is not 100%, so testing low energy conditions is basically impossible with beacons.
+    -- In addition, charge rate seems to be instant (maybe constant based on Vanilla beacons?). See:
+    -- https://forums.factorio.com/viewtopic.php?f=18&t=93276&p=528446&hilit=beacon+energy+bar#p528446
+    -- energy_source =
     -- {
-      type = "beacon",
-      name = "ocs-helper",
-      icon = "__base__/graphics/icons/constant-combinator.png",
-      icon_size = 64, icon_mipmaps = 4,
-      -- minable = nil, -- todo does this set minable to default?
-      -- selection_box =  {{0, 0}, {0, 0}} -- default (unselectable)
-      flags = { "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
-      -- selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
-      energy_usage = "1W", -- apparently setting it to 0 is not allowed for beacons
-      energy_source =
-      {
-        type = "void"
-      },
-      supply_area_distance = 1,
-      distribution_effectivity = ocs_effectivity,
-      module_specification = { module_slots = 12 },
-      allowed_effects = {"consumption", "speed", "pollution"},
-      base_picture =
-      {
-        filename = "__base__/graphics/entity/combinator/constant-combinator.png",
-        width = 58,
-        height = 52,
-        shift = { 0, 0 }
-      },
-      hr_version = {
-        filename = "__base__/graphics/entity/combinator/hr-constant-combinator.png",
-        width = 114,
-        height = 102,
-        scale = 0.5,
-        shift = { 0, 0 },
-      },
-    -- }
+    --   type = "electric",
+    --   usage_priority = "secondary-input",
+    --   render_no_power_icon = false,
+    --   render_no_network_icon = false
+    -- },
+    -- energy_usage = "1W",
+    energy_source =
+    {
+      type = "void"
+    },
+    energy_usage = "1W",
+    supply_area_distance = 1,
+    distribution_effectivity = ocs_effectivity,
+    module_specification = { module_slots = ocs_module_cap },
+    allowed_effects = {"consumption", "speed", "pollution"},
+    base_picture =
+    {
+      filename = "__ocs__/graphics/constant-combinator.png",
+      width = 58,
+      height = 52,
+      shift = { 0, 0 }
+    },
+    hr_version = {
+      filename = "__ocs__/graphics/hr-constant-combinator.png",
+      width = 114,
+      height = 102,
+      scale = 0.5,
+      shift = { 0, 0 },
+    },
   },
 
   -- OCS Crafting recipe
@@ -119,21 +135,21 @@ data:extend(
     type = "recipe",
     name = "ocs",
     enabled = false,
-    energy_required = 30,
+    energy_required = 15,
     ingredients =
     {
 
       {"electronic-circuit", 20},
       {"advanced-circuit", 20},
-      -- {"processing-unit", 20},
+      {"processing-unit", 10},
       {"steel-plate", 10},
-      {"copper-cable", 10},
+      {"copper-cable", 20},
     },
     result = "ocs"
   },
 
  -- OCS Technology
- {
+  {
     type = "technology",
     name = "effect-transfer",
     icon = "__base__/graphics/technology/effect-transmission.png",
@@ -153,7 +169,7 @@ data:extend(
     },
     unit =
     {
-      count = 100,
+      count = ocs_tech_sp_cost,
       ingredients =
       {
         {"automation-science-pack", 1},
