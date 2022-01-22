@@ -52,8 +52,25 @@ local function find_adjacent_ocs(entity)
 end
 
 
-local function on_crafting_machine_built(entity)
+-- sync helper inventory with connected OCS inentories
+-- TODO make sure helper modules do not count in player production statistics and cannot be removed by bots
+local function update_helper_modules(helper)
+    local helper_inventory = helper.get_module_inventory()
+    helper_inventory.clear()
 
+    local connected_ocs = global.helpers[helper.unit_number].connected_ocs
+
+    for ocs, _ in pairs(connected_ocs) do
+        local ocs_inventory = ocs.get_module_inventory()
+        for k = 1, ocs_inventory.get_item_count(), 1 do
+            local module = ocs_inventory[k]
+            helper_inventory.insert(module)
+        end
+    end
+end
+
+
+local function on_crafting_machine_built(entity)
     -- find adjacent ocs
     local adjacent_ocs = find_adjacent_ocs(entity)
 
@@ -71,25 +88,36 @@ local function on_crafting_machine_built(entity)
             force = force_neutral
         }
         global.machines[entity.unit_number] = helper
+        global.helpers[helper.unit_number] = {
+            machine = entity,
+            connected_ocs = {}
+        }
 
-        -- copy modules from all ocs into helper
-        -- TODO make sure those modules to not count in player production statistics and cannot be removed by bots
-        local helper_inventory = helper.get_module_inventory()
-        for j, ocs in ipairs(adjacent_ocs) do
-            local ocs_inventory = ocs.get_module_inventory()
-            for k = 1, ocs_inventory.get_item_count(), 1 do
-                local module = ocs_inventory[k]
-                helper_inventory.insert(module)
+        -- connect helper to ocs
+        for _, ocs in ipairs(adjacent_ocs) do
+            global.helpers[helper.unit_number].connected_ocs[ocs] = true
+            if not global.ocss[ocs.unit_number] then
+                global.ocss[ocs.unit_number] = {}
             end
+            global.ocss[ocs.unit_number][helper] = true
         end
+        
+        -- copy modules from all ocs into helper
+        update_helper_modules(helper)
     end
 end
 
 
 local function on_crafting_machine_removed(entity)
-
+    -- TODO test if cleanup works properly
     local helper = global.machines[entity.unit_number]
     if helper then
+        local connected_ocs = global.helpers[helper.unit_number].connected_ocs
+        for ocs, _ in pairs(connected_ocs) do
+            global.ocss[ocs.unit_number][helper] = nil
+        end
+        global.helpers[helper.unit_number] = nil
+        global.machines[entity.unit_number] = nil
         helper.destroy()
     end
 end
@@ -97,18 +125,20 @@ end
 
 -- can be called on potential changes as well
 local function on_ocs_inventory_changed(entity)
-    print("YAY")
-    local machines = global.ocss[entity]
-    if machines and #machines > 0 then
-        print("MACHINE AFFECTED BY MODULE CHANGE!")
+    local helpers = global.ocss[entity.unit_number]
+    if helpers then
+        for helper, _ in pairs(helpers) do
+            print("MACHINE AFFECTED BY MODULE CHANGE!")
+            update_helper_modules(helper)
+        end
     end
 end
-
 
 
 -- #################################################################
 -- Event Handlers
 -- #################################################################
+
 script.on_init(
     function()
         force_neutral = game.forces["neutral"]
@@ -169,6 +199,9 @@ script.on_load(
 
 script.on_event(defines.events.on_built_entity,
   function(event)
+    -- global.machines = {}
+    -- global.helpers = {}
+    -- global.ocss = {}
     on_crafting_machine_built(event.created_entity)
   end,
   filter
