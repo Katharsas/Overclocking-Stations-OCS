@@ -9,6 +9,9 @@
 -- https://forums.factorio.com/viewtopic.php?p=559560#p559560
 -- https://github.com/benjaminjackman/factorio-mods/blob/master/rso-mod_1.5.0/control.lua
 
+local util = require("util")
+
+
 local filter = {
     {
         filter="crafting-machine"
@@ -25,19 +28,11 @@ local OCS_WIDE_SIDE = 1
 -- Functions
 -- #################################################################
 
-local function add(pos1, pos2)
-    return {x=(pos1.x + pos2.x), y=(pos1.y + pos2.y)}
-end
-local function sub(pos1, pos2)
-    return {x=(pos1.x - pos2.x), y=(pos1.y - pos2.y)}
-end
-
-
 local function find_adjacent_ocs(entity)
     local ocs_potential_area = {x=OCS_WIDE_SIDE, y=OCS_WIDE_SIDE}
     local entity_area = entity.selection_box
-    local top_left = sub(entity_area.left_top, ocs_potential_area)
-    local bot_right = add(entity_area.right_bottom, ocs_potential_area)
+    local top_left = util.sub(entity_area.left_top, ocs_potential_area)
+    local bot_right = util.add(entity_area.right_bottom, ocs_potential_area)
 
     local adjacent_ocs_candidates = surface.find_entities_filtered({
         area={top_left, bot_right},
@@ -68,10 +63,10 @@ local function on_crafting_machine_built(entity)
         local pos = entity.position
     
         -- spawn helper beacon
-        local helper_pos = {pos.x + 0, pos.y + 0}
+        local helper_pos = {pos.x, pos.y}
         -- print("OCS: Helper position: " .. serpent.line(helper_pos))
         local helper = surface.create_entity{
-            name = "ocs-helper",
+            name = "ocs-helper-" .. util.serializeBoundingBox(entity.selection_box),
             position = helper_pos,
             force = force_neutral
         }
