@@ -14,28 +14,25 @@ local function ocsHelperTemplate()
         flags = { "placeable-off-grid", "not-repairable", "not-on-map", "not-blueprintable", "not-deconstructable", "hidden", "hide-alt-info", "no-automated-item-removal", "no-automated-item-insertion", "no-copy-paste", "not-in-kill-statistics" },
         selectable_in_game = false,
         -- Just make sure that module effect is throttled when energy drops below 100%, not meant for balance.
-        -- TODO
-        -- This does not make any sense. If the machine does not have power, beacon will have no effect anyway.
-        -- Just remove any power requirements from OCS or OCS helper and leave all of that mess behind. Or use another
-        -- helper object based on ElectricEnergyInterface
+        -- Not sure if this makes sense because if the machine does not have power, beacon will have no effect anyway.
+        -- Maybe not having power requirements on this entity and only using ElectricEnergyInterface would be better.
         -- Note:
         -- Beacons have rediculous energy buffers (8.4 times usage?). Since machines always request enough energy to
         -- fill their buffer fully, this means that beacons will receive an extremely disproportionate amount of left-over
         -- energy when satisfaction is not 100%, so testing low energy conditions is basically impossible with beacons.
         -- In addition, charge rate seems to be instant (maybe constant based on Vanilla beacons?). See:
         -- https://forums.factorio.com/viewtopic.php?f=18&t=93276&p=528446&hilit=beacon+energy+bar#p528446
-        -- energy_source =
-        -- {
-        --   type = "electric",
-        --   usage_priority = "secondary-input",
-        --   render_no_power_icon = false,
-        --   render_no_network_icon = false
-        -- },
-        -- energy_usage = "1W",
         energy_source =
         {
-        type = "void"
+          type = "electric",
+          usage_priority = "secondary-input",
+          render_no_power_icon = false,
+          render_no_network_icon = false
         },
+        -- energy_source =
+        -- {
+        -- type = "void"
+        -- },
         energy_usage = "1W",
         supply_area_distance = 1,
         distribution_effectivity = ocs_effectivity,
@@ -79,16 +76,9 @@ for _, entities in pairs(data.raw) do
 	end
 end
 
--- TODO remove eventually
-local template = ocsHelperTemplate();
-template.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
-data:extend({template})
-
 local sizesCount = 0
-
 for size, selection_box in pairs(entitySizes) do
-    print("    OCS helper size: " .. size)
-
+    -- print("    OCS helper size: " .. size)
     local helper = ocsHelperTemplate();
     helper.selection_box = selection_box
     helper.name = helper.name .. "-" .. size
@@ -96,5 +86,9 @@ for size, selection_box in pairs(entitySizes) do
 
     sizesCount = sizesCount + 1
 end
-
 print("    " .. sizesCount .. " OCS helper sizes created!")
+
+-- TODO remove eventually
+local template = ocsHelperTemplate();
+template.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+data:extend({template})
