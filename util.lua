@@ -12,7 +12,7 @@ function util.sub(pos1, pos2)
     return {x=x, y=y}
 end
 
-function util.serializeBoundingBox(boundingBox)
+function util.serialize_bounding_box(boundingBox)
     local leftTop = boundingBox.left_top or boundingBox[1]
     local rightBottom = boundingBox.right_bottom or boundingBox[2]
     local size = util.sub(rightBottom, leftTop)

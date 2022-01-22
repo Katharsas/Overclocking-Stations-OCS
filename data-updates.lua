@@ -3,7 +3,7 @@
 local util = require("util")
 
 
-local function ocsHelperTemplate()
+local function ocs_helper_template()
     -- Invisible helper beacon that is spawned for every crafting machine connected to a OCS building
     return {
         type = "beacon",
@@ -56,7 +56,7 @@ local function ocsHelperTemplate()
 end
 
 
-local affectedBuildingTypes = {
+local affected_building_types = {
     ["assembling-machine"] = true,
     ["mining-drill"] = true,
     ["rocket-silo"] = true,
@@ -64,31 +64,31 @@ local affectedBuildingTypes = {
     ["lab"] = true,
 }
 
-entitySizes = {}
+entity_sizes = {}
 
 for _, entities in pairs(data.raw) do
 	for name, data in pairs(entities) do
-        if affectedBuildingTypes[data.type] then
-            local size = util.serializeBoundingBox(data.selection_box)
-            entitySizes[size] = data.selection_box
+        if affected_building_types[data.type] then
+            local size = util.serialize_bounding_box(data.selection_box)
+            entity_sizes[size] = data.selection_box
             -- print("    affected by OCS: " .. name .. "  " .. size)
         end
 	end
 end
 
-local sizesCount = 0
-for size, selection_box in pairs(entitySizes) do
+local sizes_count = 0
+for size, selection_box in pairs(entity_sizes) do
     -- print("    OCS helper size: " .. size)
-    local helper = ocsHelperTemplate();
+    local helper = ocs_helper_template();
     helper.selection_box = selection_box
     helper.name = helper.name .. "-" .. size
 	data:extend({helper})
 
-    sizesCount = sizesCount + 1
+    sizes_count = sizes_count + 1
 end
-print("    " .. sizesCount .. " OCS helper sizes created!")
+print("    " .. sizes_count .. " OCS helper sizes created!")
 
 -- TODO remove eventually
-local template = ocsHelperTemplate();
+local template = ocs_helper_template();
 template.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 data:extend({template})

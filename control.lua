@@ -11,7 +11,7 @@
 
 local util = require("util")
 
-
+-- use types defined in data-updates instead (maybe move to config or rename util to shared.lua)
 local filter = {
     {
         filter="crafting-machine"
@@ -42,9 +42,9 @@ local function find_adjacent_ocs(entity)
     for i, ocs in ipairs(adjacent_ocs_candidates) do
         local x = ocs.position.x
         local y = ocs.position.y
-        local isAdjacentHori = entity_area.left_top.x < x and x < entity_area.right_bottom.x
-        local isAdjacentVert = entity_area.left_top.y < y and y < entity_area.right_bottom.y
-        if isAdjacentHori or isAdjacentVert then
+        local is_adjacent_hori = entity_area.left_top.x < x and x < entity_area.right_bottom.x
+        local is_adjacent_vert = entity_area.left_top.y < y and y < entity_area.right_bottom.y
+        if is_adjacent_hori or is_adjacent_vert then
             table.insert(adjacent_ocs, ocs)
         end
     end
@@ -66,7 +66,7 @@ local function on_crafting_machine_built(entity)
         local helper_pos = {pos.x, pos.y}
         -- print("OCS: Helper position: " .. serpent.line(helper_pos))
         local helper = surface.create_entity{
-            name = "ocs-helper-" .. util.serializeBoundingBox(entity.selection_box),
+            name = "ocs-helper-" .. util.serialize_bounding_box(entity.selection_box),
             position = helper_pos,
             force = force_neutral
         }
@@ -91,6 +91,16 @@ local function on_crafting_machine_removed(entity)
     local helper = global.machines[entity.unit_number]
     if helper then
         helper.destroy()
+    end
+end
+
+
+-- can be called on potential changes as well
+local function on_ocs_inventory_changed(entity)
+    print("YAY")
+    local machines = global.ocss[entity]
+    if machines and #machines > 0 then
+        print("MACHINE AFFECTED BY MODULE CHANGE!")
     end
 end
 
@@ -139,6 +149,12 @@ script.on_init(
             ocss[354] = { 743, 745 }
         ]]--
         global.ocss = {}
+
+        --[[
+            Remember OCS inventory while inside OCS GUI to better detect module changes, see event handler on_player_cursor_stack_changed
+        ]]--
+        global.opened_ocs = nil
+        global.opened_ocs_modules = nil
     end
 )  
 
@@ -148,6 +164,8 @@ script.on_load(
     surface = global.surface
   end
 )
+
+-- Changes to placement of affected machine 
 
 script.on_event(defines.events.on_built_entity,
   function(event)
@@ -162,6 +180,67 @@ script.on_event(defines.events.on_player_mined_entity,
   end,
   filter
 )
+
+-- Changes to placement of OCSs
+-- TODO
+
+-- Changes to OCS inventory
+
+script.on_event(defines.events.on_player_fast_transferred,
+  function(event)
+    local entity = event.entity
+    if entity.name == "ocs" then
+        on_ocs_inventory_changed(entity)
+    end
+  end
+)
+
+-- does not trigger on instant move (ctrl/shift + left click)
+script.on_event(defines.events.on_player_cursor_stack_changed,
+  function(event)
+    local player = game.get_player(event.player_index)
+    if player.opened_gui_type == defines.gui_type.entity then
+        local opened = player.opened
+        local stack = player.cursor_stack
+        if opened.name == "ocs" and stack ~= nil then
+            if stack.valid_for_read then
+                if stack.type == "module" then
+                    -- module may have been moved from ocs into stack
+                    on_ocs_inventory_changed(opened)
+                else
+                    -- otherwise something unimportant was moved into stack, remember ocs inventory for later
+                    global.opened_ocs = opened
+                    global.opened_ocs_modules = opened.get_module_inventory().get_item_count()
+                    return -- return to not clear global
+                end
+            else
+                -- stack was emptied
+                if not opened == global.opened_ocs then
+                    -- we do not know what was in ocs inventory before, so we have to assume change in ocs inventory
+                    on_ocs_inventory_changed(opened)
+                else
+                    -- check if ocs inventory changed
+                    local opened_ocs_modules_new = opened.get_module_inventory().get_item_count()
+                    if global.opened_ocs_modules ~= opened_ocs_modules_new then
+                        on_ocs_inventory_changed(opened)
+                    end
+                end
+            end
+        end
+    end
+    global.opened_ocs = nil
+    global.opened_ocs_modules = nil
+  end
+)
+
+-- detect instant move between inventories (ctrl/shift + left click)
+script.on_event(defines.events.on_player_main_inventory_changed,
+  function(event)
+    
+  end
+)
+
+
 
 -- script.on_event(defines.events.on_entity_destroyed,
 --   function(event)
