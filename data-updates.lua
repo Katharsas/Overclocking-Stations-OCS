@@ -1,7 +1,7 @@
 -- Generate helper ocs for all crafting station sizes
 
 local util = require("util")
-
+local config = require("config")
 
 local function ocs_helper_template()
     -- Invisible helper beacon that is spawned for every crafting machine connected to a OCS building
@@ -35,8 +35,8 @@ local function ocs_helper_template()
         -- },
         energy_usage = "1W",
         supply_area_distance = 1,
-        distribution_effectivity = ocs_effectivity,
-        module_specification = { module_slots = ocs_module_cap },
+        distribution_effectivity = config.ocs_effectivity,
+        module_specification = { module_slots = config.ocs_module_cap },
         allowed_effects = {"consumption", "speed", "pollution"},
         base_picture =
         {
@@ -69,18 +69,19 @@ entity_sizes = {}
 for _, entities in pairs(data.raw) do
 	for name, data in pairs(entities) do
         if affected_building_types[data.type] then
-            local size = util.serialize_bounding_box(data.selection_box)
-            entity_sizes[size] = data.selection_box
+            local size = util.serialize_area_box(data.collision_box)
+            entity_sizes[size] = data.collision_box
             -- print("    affected by OCS: " .. name .. "  " .. size)
+            -- print("      collision_box: " .. serpent.line(data.collision_box))
         end
 	end
 end
 
 local sizes_count = 0
-for size, selection_box in pairs(entity_sizes) do
+for size, collision_box in pairs(entity_sizes) do
     -- print("    OCS helper size: " .. size)
     local helper = ocs_helper_template();
-    helper.selection_box = selection_box
+    helper.collision_box = collision_box
     helper.name = helper.name .. "-" .. size
 	data:extend({helper})
 
@@ -90,5 +91,5 @@ print("    " .. sizes_count .. " OCS helper sizes created!")
 
 -- TODO remove eventually
 local template = ocs_helper_template();
-template.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+template.collision_box = {{-1.5, -1.5}, {1.5, 1.5}}
 data:extend({template})

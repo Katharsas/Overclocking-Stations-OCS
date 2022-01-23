@@ -3,10 +3,7 @@
 -- print(serpent.block(data.raw["beacon"]["beacon"]))
 -- print(serpent.block(data.raw["constant-combinator"]["constant-combinator"]))
 
-ocs_effectivity = 0.333 -- module effect multiplier for modules from OCS
-ocs_module_slots = 1 -- module slots per OCS
-ocs_module_cap = 12 -- max number of modules that can affect a single machine
-ocs_tech_sp_cost = 500 -- number of science packs required to research OCS
+local config = require("config")
 
 -- TODO Balance Options:
 -- Opt-In to additional power consumer helper entity for power balancing (240kw per active module)
@@ -48,12 +45,12 @@ data:extend(
     },
     energy_usage = "1W",
     supply_area_distance = 0,
-    distribution_effectivity = ocs_effectivity,
+    distribution_effectivity = config.ocs_effectivity,
     module_specification = {
       module_info_icon_shift = {0, 0},
       module_info_max_icons_per_row = 2,
       module_info_multi_row_initial_height_modifier = 0,
-      module_slots = ocs_module_slots
+      module_slots = config.ocs_module_slots
     },
     allowed_effects = {"consumption", "speed", "pollution"},
     collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
@@ -118,7 +115,7 @@ data:extend(
     },
     unit =
     {
-      count = ocs_tech_sp_cost,
+      count = config.ocs_tech_sp_cost,
       ingredients =
       {
         {"automation-science-pack", 1},

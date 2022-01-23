@@ -12,11 +12,16 @@ function util.sub(pos1, pos2)
     return {x=x, y=y}
 end
 
-function util.serialize_bounding_box(boundingBox)
-    local leftTop = boundingBox.left_top or boundingBox[1]
-    local rightBottom = boundingBox.right_bottom or boundingBox[2]
+function util.serialize_area_box(box)
+    local leftTop = box.left_top or box[1]
+    local rightBottom = box.right_bottom or box[2]
     local size = util.sub(rightBottom, leftTop)
-    return (size.x .. ":" .. size.y):gsub("[.]", "'")
+    -- round to 2 decimal places remove differences between loading and runtime floating point inaccuracies
+    local size_string = {
+        x = string.format("%.2f", size.x),
+        y = string.format("%.2f", size.y)
+    }
+    return (size_string.x .. ":" .. size_string.y):gsub("[.]", "'")
 end
 
 return util

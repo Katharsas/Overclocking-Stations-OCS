@@ -82,10 +82,12 @@ local function on_crafting_machine_built(entity)
         -- spawn helper beacon
         local helper_pos = {pos.x, pos.y}
         -- print("OCS: Helper position: " .. serpent.line(helper_pos))
+        local prototype = game.entity_prototypes[entity.name]
         local helper = surface.create_entity{
-            name = "ocs-helper-" .. util.serialize_bounding_box(entity.selection_box),
+            name = "ocs-helper-" .. util.serialize_area_box(prototype.collision_box),
             position = helper_pos,
-            force = force_neutral
+            direction = entity.direction, -- TODO test with non-rectangular machines? btw non-square buildings cannot be rotated, so we don't need to update this
+            force = force_neutral,
         }
         global.machines[entity.unit_number] = helper
         global.helpers[helper.unit_number] = {
