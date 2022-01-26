@@ -83,6 +83,7 @@ for size, collision_box in pairs(entity_sizes) do
     local helper = ocs_helper_template();
     helper.collision_box = collision_box
     helper.name = helper.name .. "-" .. size
+    helper.localised_name = "Machine overclocking effect"
 	data:extend({helper})
 
     sizes_count = sizes_count + 1

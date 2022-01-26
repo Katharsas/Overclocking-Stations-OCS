@@ -11,12 +11,22 @@
 
 local util = require("util")
 
--- use types defined in data-updates instead (maybe move to config or rename util to shared.lua)
-local filter = {
-    {
-        filter="crafting-machine"
-    }
+-- TODO share types with data-updates.lua
+local machine_types = {
+    "assembling-machine",
+    "mining-drill",
+    "rocket-silo",
+    "furnace",
+    "lab"
 }
+
+local entity_event_filter = {
+    {filter="name", name="ocs"}
+}
+for _, type in ipairs(machine_types) do
+    local filter = {filter="type", type=type}
+    table.insert(entity_event_filter, filter)
+end
 
 local force_neutral
 local surface
@@ -52,13 +62,15 @@ local function find_adjacent_ocs(entity)
 end
 
 
--- sync helper inventory with connected OCS inentories
+-- sync helper inventory with connected OCS inventories, does not update connection data
+-- returns number of currently connected OCS
 -- TODO make sure helper modules do not count in player production statistics and cannot be removed by bots
 local function update_helper_modules(helper)
     local helper_inventory = helper.get_module_inventory()
     helper_inventory.clear()
 
     local connected_ocs = global.helpers[helper.unit_number].connected_ocs
+    local connected_ocs_count = 0
 
     for ocs, _ in pairs(connected_ocs) do
         local ocs_inventory = ocs.get_module_inventory()
@@ -66,7 +78,9 @@ local function update_helper_modules(helper)
             local module = ocs_inventory[k]
             helper_inventory.insert(module)
         end
+        connected_ocs_count = connected_ocs_count + 1
     end
+    return connected_ocs_count
 end
 
 
@@ -89,6 +103,7 @@ local function on_crafting_machine_built(entity)
             direction = entity.direction, -- TODO test with non-rectangular machines? btw non-square buildings cannot be rotated, so we don't need to update this
             force = force_neutral,
         }
+        
         global.machines[entity.unit_number] = helper
         global.helpers[helper.unit_number] = {
             machine = entity,
@@ -130,9 +145,44 @@ local function on_ocs_inventory_changed(entity)
     local helpers = global.ocss[entity.unit_number]
     if helpers then
         for helper, _ in pairs(helpers) do
-            print("MACHINE AFFECTED BY MODULE CHANGE!")
             update_helper_modules(helper)
         end
+    end
+end
+
+
+local function on_ocs_built(entity)
+    -- TODO find adjacent machines
+    -- TODO if those machines do not have helper, create it
+    -- connect to helper
+end
+
+
+local function on_ocs_removed(entity)
+    -- TODO test if cleanup works properly
+    local helpers = global.ocss[entity.unit_number]
+    -- for all machines affected by this ocs, get corresponding helper and disconnect it from this ocs
+    if helpers then
+        for helper, _ in pairs(helpers) do
+            local helper_info = global.helpers[helper.unit_number]
+            -- TODO this does not work. Event though the entity inside connected_ocs is equal to our entity,
+            -- trying to get it by key does not find the enitity. In other words, the table uses a different
+            -- equality definition than equals operator, and therefore we cannot use entity objects as table
+            -- keys, we need to switch to using unit_number everywhere if possible
+            -- However, since there is not way to get entity by unit_number, we may need to also save entity
+            -- references as values for the corresponding unit_number, if we want to manipulate it later
+            helper_info.connected_ocs[entity] = nil
+            
+            -- sync helper and remove it if no more connected ocs left
+            local connected_ocs_count = update_helper_modules(helper)
+            if connected_ocs_count == 0 then
+                local machine = helper_info.machine
+                global.helpers[helper.unit_number] = nil
+                global.machines[machine.unit_number] = nil
+                helper.destroy()
+            end
+        end
+        global.ocss[entity.unit_number] = nil
     end
 end
 
@@ -197,27 +247,34 @@ script.on_load(
   end
 )
 
--- Changes to placement of affected machine 
+-- Changes to placement of affected machines and OCSs
 
 script.on_event(defines.events.on_built_entity,
   function(event)
     -- global.machines = {}
     -- global.helpers = {}
     -- global.ocss = {}
-    on_crafting_machine_built(event.created_entity)
+    if (event.created_entity.name == "ocs") then
+        print("OCS")
+        on_ocs_built(event.created_entity)
+    else
+        print(event.created_entity.type)
+        on_crafting_machine_built(event.created_entity)
+    end
   end,
-  filter
+  entity_event_filter
 )
 
 script.on_event(defines.events.on_player_mined_entity,
   function(event)
-    on_crafting_machine_removed(event.entity)
+    if (event.entity.name == "ocs") then
+        on_ocs_removed(event.entity)
+    else
+        on_crafting_machine_removed(event.entity)
+    end
   end,
-  filter
+  entity_event_filter
 )
-
--- Changes to placement of OCSs
--- TODO
 
 -- Changes to OCS inventory
 
@@ -271,7 +328,13 @@ script.on_event(defines.events.on_player_cursor_stack_changed,
 -- detect instant move between inventories (ctrl/shift + left click)
 script.on_event(defines.events.on_player_main_inventory_changed,
   function(event)
-    
+    local player = game.get_player(event.player_index)
+    if player.opened_gui_type == defines.gui_type.entity then
+        local opened = player.opened
+        if opened.name == "ocs" then
+            on_ocs_inventory_changed(opened)
+        end
+    end
   end
 )
 
