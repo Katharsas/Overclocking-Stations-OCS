@@ -72,7 +72,7 @@ local function update_helper_modules(helper)
     local connected_ocs = global.helpers[helper.unit_number].connected_ocs
     local connected_ocs_count = 0
 
-    for ocs, _ in pairs(connected_ocs) do
+    for _, ocs in pairs(connected_ocs) do
         local ocs_inventory = ocs.get_module_inventory()
         for k = 1, ocs_inventory.get_item_count(), 1 do
             local module = ocs_inventory[k]
@@ -112,11 +112,11 @@ local function on_crafting_machine_built(entity)
 
         -- connect helper to ocs
         for _, ocs in ipairs(adjacent_ocs) do
-            global.helpers[helper.unit_number].connected_ocs[ocs] = true
+            global.helpers[helper.unit_number].connected_ocs[ocs.unit_number] = ocs
             if not global.ocss[ocs.unit_number] then
                 global.ocss[ocs.unit_number] = {}
             end
-            global.ocss[ocs.unit_number][helper] = true
+            global.ocss[ocs.unit_number][helper.unit_number] = helper
         end
         
         -- copy modules from all ocs into helper
@@ -130,8 +130,8 @@ local function on_crafting_machine_removed(entity)
     local helper = global.machines[entity.unit_number]
     if helper then
         local connected_ocs = global.helpers[helper.unit_number].connected_ocs
-        for ocs, _ in pairs(connected_ocs) do
-            global.ocss[ocs.unit_number][helper] = nil
+        for ocs_id, _ in pairs(connected_ocs) do
+            global.ocss[ocs_id][helper.unit_number] = nil
         end
         global.helpers[helper.unit_number] = nil
         global.machines[entity.unit_number] = nil
@@ -144,7 +144,7 @@ end
 local function on_ocs_inventory_changed(entity)
     local helpers = global.ocss[entity.unit_number]
     if helpers then
-        for helper, _ in pairs(helpers) do
+        for _, helper in pairs(helpers) do
             update_helper_modules(helper)
         end
     end
@@ -163,15 +163,9 @@ local function on_ocs_removed(entity)
     local helpers = global.ocss[entity.unit_number]
     -- for all machines affected by this ocs, get corresponding helper and disconnect it from this ocs
     if helpers then
-        for helper, _ in pairs(helpers) do
-            local helper_info = global.helpers[helper.unit_number]
-            -- TODO this does not work. Event though the entity inside connected_ocs is equal to our entity,
-            -- trying to get it by key does not find the enitity. In other words, the table uses a different
-            -- equality definition than equals operator, and therefore we cannot use entity objects as table
-            -- keys, we need to switch to using unit_number everywhere if possible
-            -- However, since there is not way to get entity by unit_number, we may need to also save entity
-            -- references as values for the corresponding unit_number, if we want to manipulate it later
-            helper_info.connected_ocs[entity] = nil
+        for helper_id, helper in pairs(helpers) do
+            local helper_info = global.helpers[helper_id]
+            helper_info.connected_ocs[entity.unit_number] = nil
             
             -- sync helper and remove it if no more connected ocs left
             local connected_ocs_count = update_helper_modules(helper)
@@ -207,7 +201,7 @@ script.on_init(
                 - machine is removed (check if helper must be cleaned up)
             Example:
 
-            machines[742] = 743
+            machines[742] = <LuaEntity(743)>
         ]]--
         global.machines = {}
 
@@ -217,8 +211,11 @@ script.on_init(
             Example:
 
             helpers[743] = {
-                machine = 742
-                connected_ocs = { 354, 456 }
+                machine = <LuaEntity(742)>
+                connected_ocs = {
+                    354 = <LuaEntity(354)>,
+                    456 = <LuaEntity(456)>
+                }
             }
         ]]--
         global.helpers = {}
@@ -228,7 +225,10 @@ script.on_init(
             Needed when:
             Example:
 
-            ocss[354] = { 743, 745 }
+            ocss[354] = {
+                743 = <LuaEntity(743)>,
+                745 = <LuaEntity(745)>
+            }
         ]]--
         global.ocss = {}
 
