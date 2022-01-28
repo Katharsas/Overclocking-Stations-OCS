@@ -1,11 +1,5 @@
 
 
--- on_tick
--- on_built_entity
--- on_entity_destroyed
--- on_post_entity_died
--- on_player_mined_entity
-
 -- https://forums.factorio.com/viewtopic.php?p=559560#p559560
 -- https://github.com/benjaminjackman/factorio-mods/blob/master/rso-mod_1.5.0/control.lua
 
@@ -31,34 +25,46 @@ end
 local force_neutral
 local surface
 
-local OCS_SHORT_SIDE = 1
-local OCS_WIDE_SIDE = 1
 
 -- #################################################################
 -- Functions
 -- #################################################################
 
-local function find_adjacent_ocs(entity)
-    local ocs_potential_area = {x=OCS_WIDE_SIDE, y=OCS_WIDE_SIDE}
-    local entity_area = entity.selection_box
-    local top_left = util.sub(entity_area.left_top, ocs_potential_area)
-    local bot_right = util.add(entity_area.right_bottom, ocs_potential_area)
 
-    local adjacent_ocs_candidates = surface.find_entities_filtered({
-        area={top_left, bot_right},
-        name="ocs"
-    })
-    local adjacent_ocs = {}
-    for i, ocs in ipairs(adjacent_ocs_candidates) do
-        local x = ocs.position.x
-        local y = ocs.position.y
-        local is_adjacent_hori = entity_area.left_top.x < x and x < entity_area.right_bottom.x
-        local is_adjacent_vert = entity_area.left_top.y < y and y < entity_area.right_bottom.y
-        if is_adjacent_hori or is_adjacent_vert then
-            table.insert(adjacent_ocs, ocs)
+-- type_filter and name_fiter are optional
+local function find_adjacent_entities(entity, type_filter, name_filter)
+    -- create area that collides with any entity that touches the given entity (including diagonally)
+    local collision_radius = {x=1, y=1}
+    local entity_area = entity.selection_box
+    local top_left = util.sub(entity_area.left_top, collision_radius)
+    local bot_right = util.add(entity_area.right_bottom, collision_radius)
+
+    local find_entities_args = {
+        area={top_left, bot_right}
+    }
+    if type_filter then
+        find_entities_args.type = type_filter
+    end
+    if name_filter then
+        find_entities_args.name = name_filter
+    end
+    local adjacent_candidates = surface.find_entities_filtered(find_entities_args)
+
+    -- filter out entities that only diagonally touch at a single corner point
+    -- TODO this algorithm only works for square entites, implement different algo that checks for 
+    -- overlapping selection_boxes in at least one dimension for each comparison
+    local adjacent = {}
+    for i, candidate in ipairs(adjacent_candidates) do
+        -- local x = ocs.position.x
+        -- local y = ocs.position.y
+        -- local is_adjacent_hori = entity_area.left_top.x < x and x < entity_area.right_bottom.x
+        -- local is_adjacent_vert = entity_area.left_top.y < y and y < entity_area.right_bottom.y
+        local pos_relative = util.sub(entity.position, candidate.position)
+        if math.abs(pos_relative.x) ~= math.abs(pos_relative.y) then
+            table.insert(adjacent, candidate)
         end
     end
-    return adjacent_ocs
+    return adjacent
 end
 
 
@@ -84,9 +90,18 @@ local function update_helper_modules(helper)
 end
 
 
+local function connect_helper_to_ocs(helper, ocs)
+    global.helpers[helper.unit_number].connected_ocs[ocs.unit_number] = ocs
+    if not global.ocss[ocs.unit_number] then
+        global.ocss[ocs.unit_number] = {}
+    end
+    global.ocss[ocs.unit_number][helper.unit_number] = helper
+end
+
+
 local function on_crafting_machine_built(entity)
     -- find adjacent ocs
-    local adjacent_ocs = find_adjacent_ocs(entity)
+    local adjacent_ocs = find_adjacent_entities(entity, nil, "ocs")
 
     if #adjacent_ocs > 0 then
         
@@ -110,13 +125,8 @@ local function on_crafting_machine_built(entity)
             connected_ocs = {}
         }
 
-        -- connect helper to ocs
         for _, ocs in ipairs(adjacent_ocs) do
-            global.helpers[helper.unit_number].connected_ocs[ocs.unit_number] = ocs
-            if not global.ocss[ocs.unit_number] then
-                global.ocss[ocs.unit_number] = {}
-            end
-            global.ocss[ocs.unit_number][helper.unit_number] = helper
+            connect_helper_to_ocs(helper, ocs)
         end
         
         -- copy modules from all ocs into helper
@@ -152,9 +162,17 @@ end
 
 
 local function on_ocs_built(entity)
-    -- TODO find adjacent machines
-    -- TODO if those machines do not have helper, create it
-    -- connect to helper
+    local adjacent_machines = find_adjacent_entities(entity, machine_types)
+    for _, machine in ipairs(adjacent_machines) do
+        local helper = global.machines[machine.unit_number]
+        -- TODO maybe this could be done more elegantly?
+        if not helper then
+            on_crafting_machine_built(machine)
+        else
+            connect_helper_to_ocs(helper, entity)
+            update_helper_modules(helper)
+        end
+    end
 end
 
 
@@ -255,10 +273,8 @@ script.on_event(defines.events.on_built_entity,
     -- global.helpers = {}
     -- global.ocss = {}
     if (event.created_entity.name == "ocs") then
-        print("OCS")
         on_ocs_built(event.created_entity)
     else
-        print(event.created_entity.type)
         on_crafting_machine_built(event.created_entity)
     end
   end,
