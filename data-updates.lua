@@ -40,17 +40,17 @@ local function ocs_helper_template()
         allowed_effects = {"consumption", "speed", "pollution"},
         base_picture =
         {
-        filename = "__ocs__/graphics/constant-combinator.png",
-        width = 58,
-        height = 52,
-        shift = { 0, 0 }
+            filename = "__ocs__/graphics/constant-combinator.png",
+            width = 58,
+            height = 52,
+            shift = { 0, 0 }
         },
-        hr_version = {
-        filename = "__ocs__/graphics/hr-constant-combinator.png",
-        width = 114,
-        height = 102,
-        scale = 0.5,
-        shift = { 0, 0 },
+            hr_version = {
+            filename = "__ocs__/graphics/hr-constant-combinator.png",
+            width = 114,
+            height = 102,
+            scale = 0.5,
+            shift = { 0, 0 },
         },
     }
 end
@@ -64,7 +64,7 @@ local affected_building_types = {
     ["lab"] = true,
 }
 
-entity_sizes = {}
+local entity_sizes = {}
 
 for _, entities in pairs(data.raw) do
 	for name, data in pairs(entities) do

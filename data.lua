@@ -60,15 +60,16 @@ data:extend(
     icon_size = 64, icon_mipmaps = 4,
     base_picture =
     {
-      filename = "__ocs__/graphics/constant-combinator.png",
-      width = 58,
-      height = 52,
+      filename = "__ocs__/graphics/my-beacon-64x64.png",
+      width = 64,
+      height = 64,
+      scale = 0.5,
       shift = { 0, 0 }
     },
     hr_version = {
-      filename = "__ocs__/graphics/hr-constant-combinator.png",
-      width = 114,
-      height = 102,
+      filename = "__ocs__/graphics/my-beacon-64x64.png",
+      width = 64,
+      height = 64,
       scale = 0.5,
       shift = { 0, 0 },
     },
