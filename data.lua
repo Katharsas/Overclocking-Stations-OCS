@@ -58,21 +58,22 @@ data:extend(
 
     icon = "__ocs__/graphics/icon-constant-combinator.png",
     icon_size = 64, icon_mipmaps = 4,
+    -- Calculate image translations: https://codepen.io/jazziebgd/full/jvwmEj/
     base_picture =
     {
-      filename = "__ocs__/graphics/my-beacon-64x64.png",
-      width = 64,
-      height = 64,
-      scale = 0.5,
-      shift = { 0, 0 }
+      filename = "__ocs__/graphics/my-beacon-b.png",
+      width = 256,
+      height = 256,
+      scale = 0.23,
+      shift = { 0, 0.1 }
     },
-    hr_version = {
-      filename = "__ocs__/graphics/my-beacon-64x64.png",
-      width = 64,
-      height = 64,
-      scale = 0.5,
-      shift = { 0, 0 },
-    },
+    -- hr_version = {
+    --   filename = "__ocs__/graphics/my-beacon-b.png",
+    --   width = 256,
+    --   height = 256,
+    --   scale = 0.23,
+    --   shift = { 0, 0.1 },
+    -- },
     corpse = "decider-combinator-remnants",
     dying_explosion = "decider-combinator-explosion",
   },
