@@ -262,35 +262,35 @@ script.on_load(
   function()
     force_neutral = global.force_neutral
     surface = global.surface
+
+    -- global.machines = {}
+    -- global.helpers = {}
+    -- global.ocss = {}
   end
 )
 
 -- Changes to placement of affected machines and OCSs
 
-script.on_event(defines.events.on_built_entity,
-  function(event)
-    -- global.machines = {}
-    -- global.helpers = {}
-    -- global.ocss = {}
+local function on_building_created(event)
     if (event.created_entity.name == "ocs") then
         on_ocs_built(event.created_entity)
     else
         on_crafting_machine_built(event.created_entity)
     end
-  end,
-  entity_event_filter
-)
+end
+script.on_event(defines.events.on_built_entity, on_building_created, entity_event_filter)
+script.on_event(defines.events.on_robot_built_entity, on_building_created, entity_event_filter)
 
-script.on_event(defines.events.on_player_mined_entity,
-  function(event)
+local function on_building_removed(event)
     if (event.entity.name == "ocs") then
         on_ocs_removed(event.entity)
     else
         on_crafting_machine_removed(event.entity)
     end
-  end,
-  entity_event_filter
-)
+end
+script.on_event(defines.events.on_player_mined_entity, on_building_removed, entity_event_filter)
+script.on_event(defines.events.on_robot_mined_entity, on_building_removed, entity_event_filter)
+script.on_event(defines.events.on_entity_died, on_building_removed, entity_event_filter)
 
 -- Changes to OCS inventory
 

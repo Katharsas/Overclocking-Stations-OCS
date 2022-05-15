@@ -28,6 +28,7 @@ data:extend(
   {
     name = "ocs",
     type = "beacon",
+    flags = {"placeable-player", "player-creation"},
     minable = {result = "ocs"},
     max_health = 300,
     minable = {
