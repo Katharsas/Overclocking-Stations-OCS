@@ -141,7 +141,11 @@ local function on_crafting_machine_removed(entity)
     if helper then
         local connected_ocs = global.helpers[helper.unit_number].connected_ocs
         for ocs_id, _ in pairs(connected_ocs) do
+            -- sync ocss or remove if this machine was the only machine connected to ocs
             global.ocss[ocs_id][helper.unit_number] = nil
+            if table_size(global.ocss[ocs_id]) == 0 then
+                global.ocss[ocs_id] = nil
+            end
         end
         global.helpers[helper.unit_number] = nil
         global.machines[entity.unit_number] = nil
@@ -196,6 +200,70 @@ local function on_ocs_removed(entity)
         end
         global.ocss[entity.unit_number] = nil
     end
+end
+
+local function cleanup_helpers(destroy_helpers_without_state)
+    local detached_count = 0
+    local find_entities_args = {
+        type = "beacon"
+    }
+    local beacons = surface.find_entities_filtered(find_entities_args)
+    for i, beacon in ipairs(beacons) do
+        local is_helper = util.starts_with(beacon.name, "ocs-helper")
+        if is_helper then
+            local helper = global.helpers[beacon.unit_number]
+            if helper == nil then
+                if destroy_helpers_without_state then
+                    beacon.destroy()
+                end
+                detached_count = detached_count + 1
+            end
+        end
+    end
+    if destroy_helpers_without_state then
+        print("Destroyed "..detached_count.." ocs-helper entities!")
+    else
+        assert(detached_count == 0, "State entries for "..detached_count.." ocs-helper entities are missing!")
+    end
+end
+
+function test_global_state_integrity()
+
+    local count_machines = table_size(global.machines)
+    local count_helpers = table_size(global.helpers)
+    local count_ocss = table_size(global.ocss)
+    print("Affected Machines: "..count_machines)
+    print("Affected OCSs: "..count_ocss)
+    print("Helpers: "..count_helpers)
+
+    assert(count_machines == count_helpers, "There must be as many crafting machines as helpers. Machines: "..count_machines..", Helpers: "..count_helpers)
+
+    -- find distinct helpers references by ocss, and make sure all references exist
+    local referenced_helpers = {}
+    for ocs_id, helpers in pairs(global.ocss) do
+        for helper_id, _ in pairs(helpers) do
+            referenced_helpers[helper_id] = true
+            assert(global.helpers[helper_id] ~= nil, "The helper "..helper_id.." referenced by OCS "..ocs_id.." is missing in helpers!")
+        end
+    end
+    local count_helper_references = table_size(referenced_helpers)
+    assert(count_helpers == count_helper_references, "There must be as many helpers as OCS helper references. Helpers: "..count_helpers..", References: "..count_helper_references)
+
+    -- find distinct ocss referenced by helpers, and make sure all references exist
+    local referenced_ocss = {}
+    for helper_id, helper in pairs(global.helpers) do
+        for ocs_id, _ in pairs(helper.connected_ocs) do
+            referenced_ocss[ocs_id] = true
+            assert(global.ocss[ocs_id] ~= nil, "The OCS "..ocs_id.." referenced by helper "..helper_id.." is missing in ocss!")
+        end
+    end
+    local count_ocs_references = table_size(referenced_ocss)
+    assert(count_ocss == count_ocs_references, "There must be as many OCSs as helper OCS references. OCSs: "..count_ocss..", References: "..count_ocs_references)
+
+    -- TODO:
+    -- all helpers have machine reference and all machines have helper reference
+    -- machines: referenced helpers are valid entities
+    -- helpers: referenced machines and ocss are valid entities
 end
 
 

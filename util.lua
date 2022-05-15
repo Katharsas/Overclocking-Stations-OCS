@@ -1,6 +1,8 @@
 
 local util = {}
 
+-- Maths
+
 function util.add(pos1, pos2)
     local x = (pos1.x or pos1[1]) + (pos2.x or pos2[1])
     local y = (pos1.y or pos1[2]) + (pos2.y or pos2[2])
@@ -22,6 +24,16 @@ function util.serialize_area_box(box)
         y = string.format("%.2f", size.y)
     }
     return (size_string.x .. ":" .. size_string.y):gsub("[.]", "'")
+end
+
+-- Strings
+
+function util.starts_with(str, start)
+    return str:sub(1, #start) == start
+end
+ 
+function util.ends_with(str, ending)
+    return ending == "" or str:sub(-#ending) == ending
 end
 
 return util
