@@ -62,7 +62,7 @@ data:extend(
     -- Calculate image translations: https://codepen.io/jazziebgd/full/jvwmEj/
     base_picture =
     {
-      filename = "__ocs__/graphics/my-beacon-b.png",
+      filename = "__ocs__/graphics/my-beacon-c.png",
       width = 256,
       height = 256,
       scale = 0.23,
