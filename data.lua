@@ -14,8 +14,8 @@ data:extend(
   {
     type = "item",
     name = "ocs",
-    icon = "__ocs__/graphics/icon-constant-combinator.png",
-    icon_size = 64, icon_mipmaps = 4,
+    icon = "__ocs__/graphics/icon-my-beacon-c.png",
+    icon_size = 64, icon_mipmaps = 1,
     subgroup = "module",
     order = "a[beacon]-2",
     place_result = "ocs",

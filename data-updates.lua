@@ -94,3 +94,10 @@ print("    " .. sizes_count .. " OCS helper sizes created!")
 local template = ocs_helper_template();
 template.collision_box = {{-1.5, -1.5}, {1.5, 1.5}}
 data:extend({template})
+
+
+-- Remove classic beacon tech
+
+if data.raw.technology["effect-transmission"] then
+	data.raw.technology["effect-transmission"] = null
+end
