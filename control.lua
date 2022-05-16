@@ -291,6 +291,7 @@ script.on_init(
         ]]--
         global.machines = {}
 
+
         --[[
             Helper beacons that each control module effects of one machine, synchronized to any OCS connected to that machine.
             Needed when:
@@ -306,8 +307,9 @@ script.on_init(
         ]]--
         global.helpers = {}
 
+
         --[[
-            Overclocking stations that only affect machines sitting adjacent to them by affecting that machines personal helper beacon.
+            OCSs that only affect machines sitting adjacent to them by affecting that machines personal helper beacon.
             Needed when:
             Example:
 
@@ -317,6 +319,19 @@ script.on_init(
             }
         ]]--
         global.ocss = {}
+
+
+        --[[
+            OCSs might have an open module request proxy after being built (usually from blueprint that contained module configuration).
+            Needed when:
+                - OCS is built (if proxy at was created at same position, remember proxies event id)
+                - OCS's proxy is destroyed (expect changed OCS module configuration, remove from this table)
+            Example:
+
+            ocs_module_proxies[1807] = 354
+        ]]--
+        global.ocs_module_proxies = {}
+
 
         --[[
             Remember OCS inventory while inside OCS GUI to better detect module changes, see event handler on_player_cursor_stack_changed
@@ -337,14 +352,29 @@ script.on_load(
   end
 )
 
+
 -- Changes to placement of affected machines and OCSs
+
+local function on_ocs_created_register_proxies(ocs)
+    -- we simply assume that this filter only catches modules
+    local proxy_filter = {
+        type = "item-request-proxy",
+        position = ocs.position
+    }
+    for _, proxy in pairs(surface.find_entities_filtered(proxy_filter)) do
+        global.ocs_module_proxies[proxy.unit_number] = ocs.unit_number
+        script.register_on_entity_destroyed(proxy)
+    end
+end
 
 local function on_building_created(event)
     if (event.created_entity.name == "ocs") then
+        on_ocs_created_register_proxies(event.created_entity)
         on_ocs_built(event.created_entity)
     else
         on_crafting_machine_built(event.created_entity)
     end
+    -- test_global_state_integrity()
 end
 script.on_event(defines.events.on_built_entity, on_building_created, entity_event_filter)
 script.on_event(defines.events.on_robot_built_entity, on_building_created, entity_event_filter)
@@ -355,10 +385,25 @@ local function on_building_removed(event)
     else
         on_crafting_machine_removed(event.entity)
     end
+    -- test_global_state_integrity()
 end
 script.on_event(defines.events.on_player_mined_entity, on_building_removed, entity_event_filter)
 script.on_event(defines.events.on_robot_mined_entity, on_building_removed, entity_event_filter)
 script.on_event(defines.events.on_entity_died, on_building_removed, entity_event_filter)
+
+local function on_proxy_destroyed(event)
+    local proxy_id = event.unit_number
+    local ocs_id = global.ocs_module_proxies[proxy_id]
+    if ocs_id ~= nil then
+        -- robot has delivered module to one of our OCSs
+        for _, helper in pairs(global.ocss[ocs_id]) do
+            update_helper_modules(helper)
+        end
+        global.ocs_module_proxies[proxy_id] = nil
+    end
+end
+script.on_event(defines.events.on_entity_destroyed, on_proxy_destroyed)
+
 
 -- Changes to OCS inventory
 
