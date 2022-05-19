@@ -6,5 +6,5 @@
     "author": "Katharsas",
     "factorio_version": "1.1",
     "dependencies": ["base >= 1.1"],
-    "description": "Replace beacons with overclocking stations."
+    "description": "Replace beacons with overclocking stations that need to be placed touching one or more crafting machines to work."
 }

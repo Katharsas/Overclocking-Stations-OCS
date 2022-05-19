@@ -54,6 +54,8 @@ data:extend(
       module_slots = config.ocs_module_slots
     },
     allowed_effects = {"consumption", "speed", "pollution"},
+    collision_mask = {"water-tile"},
+    base_picture_render_layer = "ground-tile",
     collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
     selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
 
@@ -62,7 +64,7 @@ data:extend(
     -- Calculate image translations: https://codepen.io/jazziebgd/full/jvwmEj/
     base_picture =
     {
-      filename = "__ocs__/graphics/my-beacon-c.png",
+      filename = "__ocs__/graphics/my-beacon-f.png",
       width = 256,
       height = 256,
       scale = 0.23,
