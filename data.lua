@@ -2,8 +2,11 @@
 -- print(serpent.block(data.raw.item["beacon"]))
 -- print(serpent.block(data.raw["beacon"]["beacon"]))
 -- print(serpent.block(data.raw["constant-combinator"]["constant-combinator"]))
+-- Data.raw: https://jackhugh.github.io/factorio-data-raw-visualiser/
+-- Calculate image translations: https://codepen.io/jazziebgd/full/jvwmEj/
 
 local config = require("config")
+local ocs_graphics_set = require("ocs-graphics")
 
 -- TODO Balance Options:
 -- Opt-In to additional power consumer helper entity for power balancing (240kw per active module)
@@ -55,28 +58,14 @@ data:extend(
     },
     allowed_effects = {"consumption", "speed", "pollution"},
     collision_mask = {"water-tile"},
+    render_layer = "ground-tile",
     base_picture_render_layer = "ground-tile",
     collision_box = {{-0.35, -0.35}, {0.35, 0.35}},
     selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
 
     icon = "__ocs__/graphics/icon-constant-combinator.png",
     icon_size = 64, icon_mipmaps = 4,
-    -- Calculate image translations: https://codepen.io/jazziebgd/full/jvwmEj/
-    base_picture =
-    {
-      filename = "__ocs__/graphics/my-beacon-f.png",
-      width = 256,
-      height = 256,
-      scale = 0.23,
-      shift = { 0, 0.1 }
-    },
-    -- hr_version = {
-    --   filename = "__ocs__/graphics/my-beacon-b.png",
-    --   width = 256,
-    --   height = 256,
-    --   scale = 0.23,
-    --   shift = { 0, 0.1 },
-    -- },
+    graphics_set = ocs_graphics_set,
     corpse = "decider-combinator-remnants",
     dying_explosion = "decider-combinator-explosion",
   },
